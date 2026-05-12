@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Register — ClassifyAI{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-left">
+    <div class="auth-brand">
+      <i class="fa-solid fa-brain"></i>
+      <span>Classify<strong>AI</strong></span>
+    </div>
+    <h2 class="auth-headline">Start classifying<br/>in <em>seconds</em></h2>
+    <div class="auth-feat-list">
+      <div class="afl"><i class="fa-solid fa-check"></i> Free account forever</div>
+      <div class="afl"><i class="fa-solid fa-check"></i> Upload your own datasets</div>
+      <div class="afl"><i class="fa-solid fa-check"></i> REST API access included</div>
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-card">
+      <h1 class="auth-title">Create account</h1>
+      <p class="auth-sub">Join ClassifyAI and explore ML models</p>
+
+      <form method="POST" action="{{ url_for('register') }}" class="auth-form" id="regForm">
+
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-id-card input-icon"></i>
+            <input type="text" id="name" name="name" placeholder="Your full name"
+                   required class="form-input"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-envelope input-icon"></i>
+            <input type="email" id="email" name="email" placeholder="you@example.com"
+                   required class="form-input"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-user input-icon"></i>
+            <input type="text" id="username" name="username" placeholder="Choose a username"
+                   required class="form-input"/>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-lock input-icon"></i>
+              <input type="password" id="password" name="password" placeholder="Min 8 chars"
+                     required minlength="8" class="form-input" oninput="checkStrength(this.value)"/>
+              <button type="button" class="pw-toggle" onclick="togglePw('password',this)">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <div class="pw-strength">
+              <div class="pw-bar" id="pwBar"></div>
+            </div>
+            <p class="pw-hint" id="pwHint"></p>
+          </div>
+
+          <div class="form-group">
+            <label for="confirm_password">Confirm Password</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-shield-halved input-icon"></i>
+              <input type="password" id="confirm_password" name="confirm_password"
+                     placeholder="Repeat password" required class="form-input"
+                     oninput="checkMatch()"/>
+              <button type="button" class="pw-toggle" onclick="togglePw('confirm_password',this)">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <p class="match-hint" id="matchHint"></p>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg">
+          Create Account <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+
+      <p class="auth-switch">
+        Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePw(id, btn) {
+  const el = document.getElementById(id);
+  const icon = btn.querySelector('i');
+  el.type = el.type === 'password' ? 'text' : 'password';
+  icon.className = el.type === 'text' ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+}
+
+function checkStrength(val) {
+  const bar = document.getElementById('pwBar');
+  const hint = document.getElementById('pwHint');
+  let score = 0;
+  if (val.length >= 8)   score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  const levels = ['', 'weak', 'fair', 'good', 'strong'];
+  const labels = ['', '⚠ Weak', '◑ Fair', '✓ Good', '✦ Strong'];
+  bar.className   = 'pw-bar ' + (levels[score] || '');
+  bar.style.width = (score * 25) + '%';
+  hint.textContent = labels[score] || '';
+  hint.className  = 'pw-hint ' + (levels[score] || '');
+}
+
+function checkMatch() {
+  const pw = document.getElementById('password').value;
+  const cf = document.getElementById('confirm_password').value;
+  const el = document.getElementById('matchHint');
+  if (!cf) { el.textContent = ''; return; }
+  el.textContent  = pw === cf ? '✓ Passwords match' : '✗ Passwords do not match';
+  el.className    = 'match-hint ' + (pw === cf ? 'match-ok' : 'match-bad');
+}
+</script>
+{% endblock %}

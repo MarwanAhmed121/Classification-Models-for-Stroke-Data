@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}Models — ClassifyAI{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header"><span><i class="fa-solid fa-brain"></i> ClassifyAI</span></div>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('dashboard') }}" class="slink"><i class="fa-solid fa-gauge-high"></i><span>Overview</span></a>
+      <a href="{{ url_for('models') }}" class="slink active"><i class="fa-solid fa-table"></i><span>Models</span></a>
+      <a href="{{ url_for('upload') }}" class="slink"><i class="fa-solid fa-upload"></i><span>Upload</span></a>
+      <a href="/api/models" class="slink" target="_blank"><i class="fa-solid fa-code"></i><span>API</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="s-avatar">{{ session.name[0] | upper }}</div>
+        <div><p class="s-name">{{ session.name }}</p><p class="s-role">{{ session.role }}</p></div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="slink logout-link"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <button class="sidebar-toggle" id="sidebarToggle"><i class="fa-solid fa-bars"></i></button>
+      <div>
+        <h1 class="dash-title">Model Comparison</h1>
+        <p class="dash-sub">{{ results | length }} models · Stroke prediction dataset</p>
+      </div>
+      <div class="topbar-actions">
+        <a href="/api/models" target="_blank" class="btn btn-outline btn-sm"><i class="fa-solid fa-code"></i> JSON</a>
+      </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="filter-bar">
+      <form method="GET" action="{{ url_for('models') }}" class="filter-form">
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" name="search" placeholder="Search models…" value="{{ search }}" class="search-input" id="searchInput"/>
+        </div>
+        <select name="sort" class="filter-select" onchange="this.form.submit()">
+          <option value="roc_auc"   {% if sort_by=='roc_auc'   %}selected{% endif %}>Sort: ROC-AUC</option>
+          <option value="test_acc"  {% if sort_by=='test_acc'  %}selected{% endif %}>Sort: Test Accuracy</option>
+          <option value="test_f1"   {% if sort_by=='test_f1'   %}selected{% endif %}>Sort: Test F1</option>
+          <option value="pr_auc"    {% if sort_by=='pr_auc'    %}selected{% endif %}>Sort: PR AUC</option>
+          <option value="test_bal_acc" {% if sort_by=='test_bal_acc' %}selected{% endif %}>Sort: Balanced Acc</option>
+        </select>
+        <select name="order" class="filter-select" onchange="this.form.submit()">
+          <option value="desc" {% if order=='desc' %}selected{% endif %}>↓ Descending</option>
+          <option value="asc"  {% if order=='asc'  %}selected{% endif %}>↑ Ascending</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+        <a href="{{ url_for('models') }}" class="btn btn-outline btn-sm">Reset</a>
+      </form>
+    </div>
+
+    <!-- Metric Toggle -->
+    <div class="metric-toggle">
+      <button class="mtog active" data-set="test">Test Metrics</button>
+      <button class="mtog" data-set="train">Train Metrics</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="data-table models-table" id="modelsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Model</th>
+              <th>Category</th>
+              <th class="metric-col test-col">Accuracy</th>
+              <th class="metric-col train-col hidden">Accuracy</th>
+              <th class="metric-col test-col">Precision</th>
+              <th class="metric-col train-col hidden">Precision</th>
+              <th class="metric-col test-col">Recall</th>
+              <th class="metric-col train-col hidden">Recall</th>
+              <th class="metric-col test-col">F1 Score</th>
+              <th class="metric-col train-col hidden">F1 Score</th>
+              <th class="metric-col test-col">Bal. Acc</th>
+              <th class="metric-col train-col hidden">Bal. Acc</th>
+              <th>ROC-AUC</th>
+              <th>PR AUC</th>
+            </tr>
+            <tr class="metric-header">
+              <th colspan="3"></th>
+              <th colspan="2" class="mh-test">← Test Metrics →</th>
+              <th colspan="2" class="mh-train hidden">← Train Metrics →</th>
+              <th colspan="2" class="mh-test"></th>
+              <th colspan="2" class="mh-train hidden"></th>
+              <th colspan="2" class="mh-test"></th>
+              <th colspan="2" class="mh-train hidden"></th>
+              <th colspan="2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for name, m in results.items() %}
+            <tr class="model-row" data-model="{{ name }}">
+              <td class="rank-cell">{{ loop.index }}</td>
+              <td class="model-name">
+                <button class="detail-btn" onclick="showDetail('{{ name }}')">
+                  {{ name }} <i class="fa-solid fa-chevron-right tiny-icon"></i>
+                </button>
+              </td>
+              <td><span class="cat-badge cat-{{ m.category }}">{{ m.category }}</span></td>
+              <!-- Test -->
+              <td class="mono metric-col test-col {% if m.test_acc >= 0.95 %}good{% endif %}">{{ "%.4f"|format(m.test_acc) }}</td>
+              <!-- Train -->
+              <td class="mono metric-col train-col hidden {% if m.train_acc >= 0.99 %}warn{% endif %}">{{ "%.4f"|format(m.train_acc) }}</td>
+              <td class="mono metric-col test-col">{{ "%.4f"|format(m.test_prec) }}</td>
+              <td class="mono metric-col train-col hidden">{{ "%.4f"|format(m.train_prec) }}</td>
+              <td class="mono metric-col test-col">{{ "%.4f"|format(m.test_recall) }}</td>
+              <td class="mono metric-col train-col hidden">{{ "%.4f"|format(m.train_recall) }}</td>
+              <td class="mono metric-col test-col">{{ "%.4f"|format(m.test_f1) }}</td>
+              <td class="mono metric-col train-col hidden">{{ "%.4f"|format(m.train_f1) }}</td>
+              <td class="mono metric-col test-col">{{ "%.4f"|format(m.test_bal_acc) }}</td>
+              <td class="mono metric-col train-col hidden">{{ "%.4f"|format(m.train_bal_acc) }}</td>
+              <td class="mono highlight-val">{{ "%.4f"|format(m.roc_auc) }}</td>
+              <td class="mono">{{ "%.4f"|format(m.pr_auc) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer note -->
+    <p class="table-note">
+      <i class="fa-solid fa-circle-info"></i>
+      <span class="good-swatch"></span> ≥ 0.95 test accuracy &nbsp;|&nbsp;
+      <span class="warn-swatch"></span> 1.00 train accuracy = possible overfit
+    </p>
+
+  </div>
+</div>
+
+<!-- ─── Model Detail Modal ─── -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()"></div>
+<div class="modal-panel" id="modalPanel">
+  <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+  <h2 id="modalTitle">Model Name</h2>
+  <p id="modalCategory" class="modal-cat"></p>
+  <div class="modal-metrics" id="modalMetrics"></div>
+  <canvas id="modalRadar" height="240"></canvas>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+<script>
+// Sidebar toggle
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+});
+
+// Train / Test toggle
+document.querySelectorAll('.mtog').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mtog').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const set = btn.dataset.set;
+    document.querySelectorAll('.test-col,  .mh-test').forEach(el => el.classList.toggle('hidden', set !== 'test'));
+    document.querySelectorAll('.train-col, .mh-train').forEach(el => el.classList.toggle('hidden', set !== 'train'));
+  });
+});
+
+// Live search filter
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.model-row').forEach(row => {
+    row.style.display = row.dataset.model.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+
+// Model detail modal
+const allModels = {{ results | tojson }};
+let radarChart = null;
+
+function showDetail(name) {
+  const m = allModels[name];
+  if (!m) return;
+  document.getElementById('modalTitle').textContent = name;
+  document.getElementById('modalCategory').textContent = m.category.toUpperCase();
+  document.getElementById('modalMetrics').innerHTML = `
+    <div class="mm-row"><span>Test Accuracy</span><strong>${(m.test_acc*100).toFixed(2)}%</strong></div>
+    <div class="mm-row"><span>Test F1 Score</span><strong>${m.test_f1.toFixed(4)}</strong></div>
+    <div class="mm-row"><span>ROC-AUC</span><strong>${m.roc_auc.toFixed(4)}</strong></div>
+    <div class="mm-row"><span>PR AUC</span><strong>${m.pr_auc.toFixed(4)}</strong></div>
+    <div class="mm-row"><span>Bal. Accuracy</span><strong>${m.test_bal_acc.toFixed(4)}</strong></div>
+    <div class="mm-row"><span>Precision</span><strong>${m.test_prec.toFixed(4)}</strong></div>
+    <div class="mm-row"><span>Recall</span><strong>${m.test_recall.toFixed(4)}</strong></div>
+  `;
+  // Radar chart
+  if (radarChart) radarChart.destroy();
+  const rCtx = document.getElementById('modalRadar').getContext('2d');
+  radarChart = new Chart(rCtx, {
+    type: 'radar',
+    data: {
+      labels: ['Accuracy','F1','ROC-AUC','PR AUC','Bal.Acc','Precision','Recall'],
+      datasets: [{
+        label: name,
+        data: [m.test_acc, m.test_f1, m.roc_auc, m.pr_auc, m.test_bal_acc, m.test_prec, m.test_recall],
+        backgroundColor: 'rgba(99,180,255,0.2)',
+        borderColor:     'rgba(99,180,255,0.9)',
+        pointBackgroundColor: 'rgba(99,180,255,1)',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      scales: { r: { min: 0, max: 1, ticks: { display: false }, grid: { color: 'var(--border)' }, pointLabels: { color: 'var(--text-muted)', font: { family: 'DM Sans', size: 11 }}}},
+      plugins: { legend: { display: false }}
+    }
+  });
+
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('modalPanel').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+  document.getElementById('modalPanel').classList.remove('active');
+}
+</script>
+{% endblock %}

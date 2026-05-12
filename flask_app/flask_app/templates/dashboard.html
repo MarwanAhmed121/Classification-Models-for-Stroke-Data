@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — ClassifyAI{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+
+  <!-- ─── Sidebar ─── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span><i class="fa-solid fa-brain"></i> ClassifyAI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('dashboard') }}" class="slink {% if active=='dashboard' %}active{% endif %}">
+        <i class="fa-solid fa-gauge-high"></i><span>Overview</span>
+      </a>
+      <a href="{{ url_for('models') }}" class="slink {% if active=='models' %}active{% endif %}">
+        <i class="fa-solid fa-table"></i><span>Models</span>
+      </a>
+      <a href="{{ url_for('upload') }}" class="slink {% if active=='upload' %}active{% endif %}">
+        <i class="fa-solid fa-upload"></i><span>Upload</span>
+      </a>
+      <a href="/api/models" class="slink" target="_blank">
+        <i class="fa-solid fa-code"></i><span>API</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="s-avatar">{{ session.name[0] | upper }}</div>
+        <div>
+          <p class="s-name">{{ session.name }}</p>
+          <p class="s-role">{{ session.role }}</p>
+        </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="slink logout-link">
+        <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ─── Main ─── -->
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <button class="sidebar-toggle" id="sidebarToggle"><i class="fa-solid fa-bars"></i></button>
+      <div>
+        <h1 class="dash-title">Dashboard</h1>
+        <p class="dash-sub">Stroke Prediction · 15 Classification Models</p>
+      </div>
+      <div class="topbar-actions">
+        <a href="/api/models" target="_blank" class="btn btn-outline btn-sm">
+          <i class="fa-solid fa-code"></i> API
+        </a>
+        <a href="{{ url_for('models') }}" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-table"></i> Full Table
+        </a>
+      </div>
+    </div>
+
+    <!-- ─── Stat Cards ─── -->
+    <div class="stat-grid">
+      <div class="stat-card sc-blue">
+        <div class="sc-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <div class="sc-body">
+          <p class="sc-label">Total Models</p>
+          <p class="sc-value">{{ stats.total_models }}</p>
+        </div>
+      </div>
+      <div class="stat-card sc-green">
+        <div class="sc-icon"><i class="fa-solid fa-trophy"></i></div>
+        <div class="sc-body">
+          <p class="sc-label">Best ROC-AUC</p>
+          <p class="sc-value">{{ stats.best_roc }}</p>
+          <p class="sc-note">{{ stats.best_model }}</p>
+        </div>
+      </div>
+      <div class="stat-card sc-purple">
+        <div class="sc-icon"><i class="fa-solid fa-bullseye"></i></div>
+        <div class="sc-body">
+          <p class="sc-label">Avg Test Accuracy</p>
+          <p class="sc-value">{{ "%.1f"|format(stats.avg_accuracy|float * 100) }}%</p>
+        </div>
+      </div>
+      <div class="stat-card sc-orange">
+        <div class="sc-icon"><i class="fa-solid fa-database"></i></div>
+        <div class="sc-body">
+          <p class="sc-label">Dataset</p>
+          <p class="sc-value" style="font-size:1.1rem">{{ stats.dataset }}</p>
+          <p class="sc-note">{{ stats.samples }} samples · {{ stats.features }} features</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Charts Row ─── -->
+    <div class="chart-grid">
+      <div class="chart-card chart-wide">
+        <div class="chart-header">
+          <h3>ROC-AUC Comparison</h3>
+          <div class="chart-tabs">
+            <button class="ctab active" data-metric="roc_auc">ROC-AUC</button>
+            <button class="ctab" data-metric="test_acc">Accuracy</button>
+            <button class="ctab" data-metric="test_f1">F1 Score</button>
+          </div>
+        </div>
+        <canvas id="barChart" height="120"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><h3>Category Breakdown</h3></div>
+        <canvas id="doughnutChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- ─── Top 5 Table ─── -->
+    <div class="table-card">
+      <div class="table-header">
+        <h3>Top 5 Models by ROC-AUC</h3>
+        <a href="{{ url_for('models') }}" class="btn btn-outline btn-sm">View All →</a>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Model</th><th>Category</th>
+              <th>Test Acc</th><th>Test F1</th><th>ROC-AUC</th><th>PR AUC</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set top5 = results.items() | sort(attribute='1.roc_auc', reverse=True) | list %}
+            {% for name, m in top5[:5] %}
+            <tr>
+              <td class="rank-cell">{{ loop.index }}</td>
+              <td class="model-name">{{ name }}</td>
+              <td><span class="cat-badge cat-{{ m.category }}">{{ m.category }}</span></td>
+              <td class="mono">{{ "%.4f"|format(m.test_acc) }}</td>
+              <td class="mono">{{ "%.4f"|format(m.test_f1) }}</td>
+              <td class="mono highlight-val">{{ "%.4f"|format(m.roc_auc) }}</td>
+              <td class="mono">{{ "%.4f"|format(m.pr_auc) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /dash-main -->
+</div><!-- /dash-layout -->
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Fetch chart data & draw ────────────────────────────────────────
+fetch('/api/chart/comparison')
+  .then(r => r.json())
+  .then(data => {
+    const labels = data.labels.map(l => l.length > 8 ? l.split(' ').map(w=>w[0]).join('') : l);
+
+    // ── Bar Chart ──────────────────────────────────────────────────
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    const barChart = new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'ROC-AUC',
+          data: data.roc_auc,
+          backgroundColor: 'rgba(99,180,255,0.75)',
+          borderRadius: 6,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => c.dataset.label + ': ' + c.raw.toFixed(4) }}
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { family: 'DM Mono', size: 11 }}},
+          y: { min: 0.68, grid: { color: 'var(--border)' }, ticks: { color: 'var(--text-muted)', font: { family: 'DM Mono', size: 11 }}}
+        }
+      }
+    });
+
+    // ── Tab switching ──────────────────────────────────────────────
+    const metricMap = { roc_auc: data.roc_auc, test_acc: data.test_acc, test_f1: data.test_f1 };
+    const labelMap  = { roc_auc: 'ROC-AUC', test_acc: 'Test Accuracy', test_f1: 'Test F1' };
+    const colorMap  = {
+      roc_auc:  'rgba(99,180,255,0.75)',
+      test_acc: 'rgba(99,230,190,0.75)',
+      test_f1:  'rgba(200,120,255,0.75)',
+    };
+    document.querySelectorAll('.ctab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.ctab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const m = btn.dataset.metric;
+        barChart.data.datasets[0].data = metricMap[m];
+        barChart.data.datasets[0].label = labelMap[m];
+        barChart.data.datasets[0].backgroundColor = colorMap[m];
+        const yMin = m === 'test_f1' ? 0 : m === 'test_acc' ? 0.85 : 0.68;
+        barChart.options.scales.y.min = yMin;
+        barChart.update();
+      });
+    });
+  });
+
+// ── Doughnut ──────────────────────────────────────────────────────
+const dCtx = document.getElementById('doughnutChart').getContext('2d');
+new Chart(dCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Boosting','Ensemble','Linear','Tree','Distance','SVM','Bayes'],
+    datasets: [{
+      data: [6, 3, 1, 1, 1, 1, 1],
+      backgroundColor: [
+        'rgba(255,160,80,0.85)',
+        'rgba(99,180,255,0.85)',
+        'rgba(99,230,190,0.85)',
+        'rgba(255,100,100,0.85)',
+        'rgba(200,120,255,0.85)',
+        'rgba(255,220,80,0.85)',
+        'rgba(120,220,180,0.85)',
+      ],
+      borderWidth: 2,
+      borderColor: 'var(--card-bg)',
+    }]
+  },
+  options: {
+    cutout: '68%',
+    plugins: {
+      legend: { position: 'right', labels: { color: 'var(--text-muted)', font: { family: 'DM Sans', size: 12 }, boxWidth: 12, padding: 16 }}
+    }
+  }
+});
+
+// ── Sidebar toggle ─────────────────────────────────────────────────
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+});
+</script>
+{% endblock %}

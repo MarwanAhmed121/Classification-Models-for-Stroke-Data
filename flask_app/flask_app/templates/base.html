@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}ClassifyAI{% endblock %}</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"/>
+
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- ═══════════ NAVBAR ═══════════ -->
+<nav class="navbar" id="navbar">
+  <div class="nav-container">
+    <a class="nav-brand" href="{{ url_for('index') }}">
+      <span class="brand-icon"><i class="fa-solid fa-brain"></i></span>
+      <span class="brand-text">Classify<strong>AI</strong></span>
+    </a>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href="{{ url_for('index') }}"    class="nav-link {% if active=='home' %}active{% endif %}">Home</a></li>
+      {% if session.username %}
+      <li><a href="{{ url_for('dashboard') }}" class="nav-link {% if active=='dashboard' %}active{% endif %}">Dashboard</a></li>
+      <li><a href="{{ url_for('models') }}"    class="nav-link {% if active=='models' %}active{% endif %}">Models</a></li>
+      <li><a href="{{ url_for('upload') }}"    class="nav-link {% if active=='upload' %}active{% endif %}">Upload</a></li>
+      {% endif %}
+    </ul>
+
+    <div class="nav-actions">
+      <button class="theme-btn" id="themeToggle" title="Toggle dark/light mode">
+        <i class="fa-solid fa-moon" id="themeIcon"></i>
+      </button>
+
+      {% if session.username %}
+      <div class="user-menu" id="userMenu">
+        <button class="avatar-btn">{{ session.name[0] | upper }}</button>
+        <div class="user-dropdown">
+          <p class="user-name">{{ session.name }}</p>
+          <p class="user-role">{{ session.role }}</p>
+          <hr/>
+          <a href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </div>
+      </div>
+      {% else %}
+      <a href="{{ url_for('login') }}" class="btn btn-outline">Login</a>
+      <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
+      {% endif %}
+
+      <button class="hamburger" id="hamburger"><i class="fa-solid fa-bars"></i></button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ FLASH TOASTS ═══════════ -->
+<div class="toast-container" id="toastContainer">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="toast toast-{{ cat }}" data-auto-dismiss>
+      <i class="fa-solid {% if cat=='success' %}fa-circle-check{% elif cat=='error' or cat=='danger' %}fa-circle-xmark{% elif cat=='warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+      <span>{{ msg }}</span>
+      <button class="toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    {% endfor %}
+  {% endwith %}
+</div>
+
+<!-- ═══════════ PAGE CONTENT ═══════════ -->
+<main class="main-content" id="mainContent">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+{% block footer %}
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="brand-icon small"><i class="fa-solid fa-brain"></i></span>
+      <span>Classify<strong>AI</strong></span>
+    </div>
+    <p class="footer-tagline">Production-grade ML classification platform</p>
+    <div class="footer-links">
+      <a href="#">Docs</a>
+      <a href="#">API</a>
+      <a href="#">GitHub</a>
+      <a href="mailto:hello@classifyai.io"><i class="fa-solid fa-envelope"></i> hello@classifyai.io</a>
+    </div>
+    <p class="footer-copy">&copy; {{ year }} ClassifyAI. Built with Flask &amp; ❤️</p>
+  </div>
+</footer>
+{% endblock %}
+
+<!-- ═══════════ LOADING OVERLAY ═══════════ -->
+<div class="page-loader" id="pageLoader">
+  <div class="loader-ring"></div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

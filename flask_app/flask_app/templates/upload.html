@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Upload Dataset — ClassifyAI{% endblock %}
+
+{% block content %}
+<div class="dash-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header"><span><i class="fa-solid fa-brain"></i> ClassifyAI</span></div>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('dashboard') }}" class="slink"><i class="fa-solid fa-gauge-high"></i><span>Overview</span></a>
+      <a href="{{ url_for('models') }}" class="slink"><i class="fa-solid fa-table"></i><span>Models</span></a>
+      <a href="{{ url_for('upload') }}" class="slink active"><i class="fa-solid fa-upload"></i><span>Upload</span></a>
+      <a href="/api/models" class="slink" target="_blank"><i class="fa-solid fa-code"></i><span>API</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="s-avatar">{{ session.name[0] | upper }}</div>
+        <div><p class="s-name">{{ session.name }}</p><p class="s-role">{{ session.role }}</p></div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="slink logout-link"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+    </div>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-topbar">
+      <button class="sidebar-toggle" id="sidebarToggle"><i class="fa-solid fa-bars"></i></button>
+      <div>
+        <h1 class="dash-title">Upload Dataset</h1>
+        <p class="dash-sub">Upload a CSV file to run classification</p>
+      </div>
+    </div>
+
+    <div class="upload-layout">
+      <!-- Drop Zone -->
+      <div class="upload-card">
+        <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" id="uploadForm">
+          <div class="drop-zone" id="dropZone">
+            <div class="dz-inner">
+              <div class="dz-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+              <h3>Drop your CSV here</h3>
+              <p>or click to browse files</p>
+              <p class="dz-hint">Supported: .csv · Max 50 MB</p>
+              <input type="file" name="dataset" id="fileInput" accept=".csv" class="dz-input"/>
+            </div>
+          </div>
+          <div class="file-preview hidden" id="filePreview">
+            <i class="fa-solid fa-file-csv fp-icon"></i>
+            <div class="fp-info">
+              <p class="fp-name" id="fpName">filename.csv</p>
+              <p class="fp-size" id="fpSize">0 KB</p>
+            </div>
+            <button type="button" class="fp-remove" onclick="clearFile()">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg" id="uploadBtn" disabled>
+            <i class="fa-solid fa-rocket"></i> Run Classification Pipeline
+          </button>
+        </form>
+      </div>
+
+      <!-- Info & Result Panel -->
+      <div class="upload-info-col">
+        {% if file %}
+        <div class="result-card">
+          <div class="rc-header">
+            <i class="fa-solid fa-circle-check rc-icon"></i>
+            <h3>Upload Successful</h3>
+          </div>
+          <div class="rc-details">
+            <div class="rc-row"><span>Filename</span><strong>{{ file.name }}</strong></div>
+            <div class="rc-row"><span>Rows (est.)</span><strong>{{ file.rows }}</strong></div>
+            <div class="rc-row"><span>Columns</span><strong>{{ file.cols }}</strong></div>
+            <div class="rc-row"><span>Time</span><strong>{{ file.time }}</strong></div>
+          </div>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-full">
+            <i class="fa-solid fa-chart-line"></i> View Dashboard
+          </a>
+        </div>
+        {% endif %}
+
+        <div class="info-card">
+          <h3><i class="fa-solid fa-circle-info"></i> Expected Format</h3>
+          <p>Your CSV should contain numeric features and a binary target column (0 / 1).</p>
+          <div class="code-snippet">
+            <code>age,hypertension,heart_disease,avg_glucose_level,bmi,stroke<br/>
+67,0,1,228.69,36.6,1<br/>
+80,0,1,105.92,32.5,1<br/>
+49,0,0,171.23,34.4,1</code>
+          </div>
+          <p class="info-note"><i class="fa-solid fa-triangle-exclamation"></i> All columns must be numeric — encode categoricals before uploading.</p>
+        </div>
+
+        <div class="info-card">
+          <h3><i class="fa-solid fa-layer-group"></i> Models that will run</h3>
+          <div class="model-pill-list">
+            {% for name in ['Logistic Regression','KNN','SVC','Decision Tree','Naive Bayes','Random Forest','Extra Trees','AdaBoost','Gradient Boosting','XGBoost','CatBoost','LightGBM','Voting Classifier','Stacking Classifier'] %}
+            <span class="model-pill">{{ name }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+});
+
+const dropZone  = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const preview   = document.getElementById('filePreview');
+const uploadBtn = document.getElementById('uploadBtn');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+});
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) setFile(fileInput.files[0]);
+});
+
+function setFile(f) {
+  document.getElementById('fpName').textContent = f.name;
+  document.getElementById('fpSize').textContent = (f.size / 1024).toFixed(1) + ' KB';
+  dropZone.classList.add('hidden');
+  preview.classList.remove('hidden');
+  uploadBtn.disabled = false;
+}
+
+function clearFile() {
+  fileInput.value = '';
+  dropZone.classList.remove('hidden');
+  preview.classList.add('hidden');
+  uploadBtn.disabled = true;
+}
+
+document.getElementById('uploadForm').addEventListener('submit', () => {
+  uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing…';
+  uploadBtn.disabled = true;
+});
+</script>
+{% endblock %}

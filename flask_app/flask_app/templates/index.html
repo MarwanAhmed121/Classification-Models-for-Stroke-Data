@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}ClassifyAI — ML Classification Platform{% endblock %}
+
+{% block content %}
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-orb orb-1"></div>
+    <div class="hero-orb orb-2"></div>
+    <div class="hero-grid"></div>
+  </div>
+  <div class="hero-content">
+    <span class="hero-badge"><i class="fa-solid fa-bolt"></i> Stroke Prediction · 15 Models</span>
+    <h1 class="hero-title">
+      Machine Learning<br/>
+      <em>Classification</em><br/>
+      at Scale
+    </h1>
+    <p class="hero-sub">
+      Compare 15 classification algorithms — from Logistic Regression to Stacking Ensembles —
+      on the stroke prediction dataset. Visualise ROC-AUC, F1, and balanced accuracy
+      in one unified dashboard.
+    </p>
+    <div class="hero-cta">
+      {% if session.username %}
+      <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">
+        <i class="fa-solid fa-chart-line"></i> Open Dashboard
+      </a>
+      {% else %}
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+        <i class="fa-solid fa-rocket"></i> Get Started Free
+      </a>
+      <a href="{{ url_for('login') }}" class="btn btn-outline btn-lg">Sign In</a>
+      {% endif %}
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><span class="hstat-val">15</span><span class="hstat-label">Models</span></div>
+      <div class="hstat-divider"></div>
+      <div class="hstat"><span class="hstat-val">5 110</span><span class="hstat-label">Samples</span></div>
+      <div class="hstat-divider"></div>
+      <div class="hstat"><span class="hstat-val">90.45%</span><span class="hstat-label">Best ROC-AUC</span></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="metric-card-float mc1">
+      <span class="mc-label">ROC-AUC</span>
+      <span class="mc-val">0.9045</span>
+      <span class="mc-model">Stacking</span>
+    </div>
+    <div class="metric-card-float mc2">
+      <span class="mc-label">Test Acc</span>
+      <span class="mc-val">95.68%</span>
+      <span class="mc-model">Stacking</span>
+    </div>
+    <div class="metric-card-float mc3">
+      <span class="mc-label">Models</span>
+      <span class="mc-val">15</span>
+      <span class="mc-model">Compared</span>
+    </div>
+    <canvas id="heroChart" width="380" height="280"></canvas>
+  </div>
+</section>
+
+<!-- ═══ FEATURES ═══ -->
+<section class="features-section">
+  <div class="section-container">
+    <h2 class="section-title">Everything you need</h2>
+    <p class="section-sub">From data upload to model comparison — all in one place.</p>
+    <div class="features-grid">
+
+      <div class="feature-card" data-delay="0">
+        <div class="feat-icon"><i class="fa-solid fa-layer-group"></i></div>
+        <h3>15 Classifiers</h3>
+        <p>Linear, distance-based, tree, ensemble, and boosting models including XGBoost, CatBoost, and LightGBM.</p>
+      </div>
+
+      <div class="feature-card" data-delay="100">
+        <div class="feat-icon"><i class="fa-solid fa-chart-bar"></i></div>
+        <h3>Rich Metrics</h3>
+        <p>Accuracy, Precision, Recall, F1, Balanced Accuracy, ROC-AUC, and PR-AUC for every model.</p>
+      </div>
+
+      <div class="feature-card" data-delay="200">
+        <div class="feat-icon"><i class="fa-solid fa-table-columns"></i></div>
+        <h3>Interactive Dashboard</h3>
+        <p>Sort, filter and search results. Toggle between train and test metrics. Export data as JSON.</p>
+      </div>
+
+      <div class="feature-card" data-delay="300">
+        <div class="feat-icon"><i class="fa-solid fa-upload"></i></div>
+        <h3>Dataset Upload</h3>
+        <p>Upload your own CSV dataset and run the classification pipeline with a single click.</p>
+      </div>
+
+      <div class="feature-card" data-delay="400">
+        <div class="feat-icon"><i class="fa-solid fa-moon"></i></div>
+        <h3>Dark / Light Mode</h3>
+        <p>Switch themes seamlessly. Your preference is persisted across sessions.</p>
+      </div>
+
+      <div class="feature-card" data-delay="500">
+        <div class="feat-icon"><i class="fa-solid fa-code"></i></div>
+        <h3>REST API</h3>
+        <p>Consume model results programmatically via the built-in JSON API endpoints.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MODEL CATEGORIES ═══ -->
+<section class="categories-section">
+  <div class="section-container">
+    <h2 class="section-title">Model Categories</h2>
+    <div class="category-pills">
+      <div class="cat-pill pill-linear"><i class="fa-solid fa-minus"></i> Linear</div>
+      <div class="cat-pill pill-distance"><i class="fa-solid fa-compass"></i> Distance</div>
+      <div class="cat-pill pill-svm"><i class="fa-solid fa-circle-half-stroke"></i> SVM</div>
+      <div class="cat-pill pill-tree"><i class="fa-solid fa-tree"></i> Tree</div>
+      <div class="cat-pill pill-bayes"><i class="fa-solid fa-diagram-project"></i> Bayes</div>
+      <div class="cat-pill pill-ensemble"><i class="fa-solid fa-cubes"></i> Ensemble</div>
+      <div class="cat-pill pill-boosting"><i class="fa-solid fa-fire"></i> Boosting</div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Hero mini bar chart
+const ctx = document.getElementById('heroChart');
+if (ctx) {
+  const labels = ['LR','KNN','SVC','DT','NB','RF','ET','Ada','GB','HGB','XGB','Cat','LGBM','Vote','Stack'];
+  const auc    = [0.8421,0.7912,0.8634,0.7234,0.8123,0.8912,0.8789,0.8634,0.8823,0.8912,0.8956,0.8934,0.8967,0.9012,0.9045];
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'ROC-AUC',
+        data: auc,
+        backgroundColor: auc.map(v =>
+          v >= 0.90 ? 'rgba(99,230,190,0.85)' :
+          v >= 0.87 ? 'rgba(99,180,255,0.75)' :
+                      'rgba(150,120,255,0.65)'
+        ),
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => 'AUC: ' + ctx.raw.toFixed(4)
+      }}},
+      scales: {
+        x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.5)', font: { family: 'DM Mono', size: 10 }}},
+        y: { min: 0.68, max: 0.92, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: 'rgba(255,255,255,0.4)', font: { family: 'DM Mono', size: 10 }}}
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

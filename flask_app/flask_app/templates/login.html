@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Login — ClassifyAI{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-left">
+    <div class="auth-brand">
+      <i class="fa-solid fa-brain"></i>
+      <span>Classify<strong>AI</strong></span>
+    </div>
+    <h2 class="auth-headline">Explore 15 ML<br/>classifiers in<br/><em>one dashboard</em></h2>
+    <div class="auth-feat-list">
+      <div class="afl"><i class="fa-solid fa-check"></i> Stroke prediction dataset</div>
+      <div class="afl"><i class="fa-solid fa-check"></i> ROC-AUC, F1, Balanced Accuracy</div>
+      <div class="afl"><i class="fa-solid fa-check"></i> Interactive model comparison</div>
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-card">
+      <h1 class="auth-title">Welcome back</h1>
+      <p class="auth-sub">Sign in to your ClassifyAI account</p>
+
+      <form method="POST" action="{{ url_for('login') }}" class="auth-form" id="loginForm">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-user input-icon"></i>
+            <input type="text" id="username" name="username" placeholder="Enter username"
+                   required autocomplete="username" class="form-input"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="password" name="password" placeholder="Enter password"
+                   required autocomplete="current-password" class="form-input"/>
+            <button type="button" class="pw-toggle" onclick="togglePw('password', this)">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg" id="loginBtn">
+          <span class="btn-label">Sign In</span>
+          <span class="btn-loader hidden"><i class="fa-solid fa-spinner fa-spin"></i></span>
+        </button>
+      </form>
+
+      <p class="auth-switch">
+        Don't have an account? <a href="{{ url_for('register') }}">Create one</a>
+      </p>
+
+      <div class="demo-creds">
+        <p><strong>Demo credentials:</strong></p>
+        <p>Username: <code>admin</code> &nbsp;|&nbsp; Password: <code>admin123</code></p>
+        <button class="btn btn-outline btn-sm" onclick="fillDemo()">Fill Demo Credentials</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePw(id, btn) {
+  const el = document.getElementById(id);
+  const icon = btn.querySelector('i');
+  if (el.type === 'password') {
+    el.type = 'text';
+    icon.className = 'fa-solid fa-eye-slash';
+  } else {
+    el.type = 'password';
+    icon.className = 'fa-solid fa-eye';
+  }
+}
+
+function fillDemo() {
+  document.getElementById('username').value = 'admin';
+  document.getElementById('password').value = 'admin123';
+}
+
+document.getElementById('loginForm').addEventListener('submit', () => {
+  document.querySelector('.btn-label').classList.add('hidden');
+  document.querySelector('.btn-loader').classList.remove('hidden');
+});
+</script>
+{% endblock %}
